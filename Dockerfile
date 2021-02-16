@@ -58,14 +58,17 @@ RUN pip3 install pexpect
 #<========================== end Clevertagger
 
 #==========================> (fast)-API
-RUN pip3 install flask
-RUN pip3 install requests
-RUN pip3 install flask-restplus
+RUN pip3 install uvicorn
+RUN pip3 install fastapi
+#RUN pip3 install flask
+#RUN pip3 install requests
+#RUN pip3 install flask-restplus
 
-COPY API.py ./clevertagger
+COPY main.py ./clevertagger
 #<========================== end (fast)-API
 
+WORKDIR /clevertagger/clevertagger
 
-CMD [ "python3", "./clevertagger/API.py" ]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
 
 EXPOSE 80
