@@ -6,9 +6,9 @@ import subprocess
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
-#import clevertagger
+import clevertagger
 
-#clever = clevertagger.Clevertagger()
+clever = clevertagger.Clevertagger()
 
 app = FastAPI()
 logger = logging.getLogger('CleverTaggerLogger')
@@ -29,14 +29,11 @@ def get_smor(text: str):
 
 @app.post("/clever")
 def get_tags(text: str):
-    pass
-    """
     if not text or text.isspace():
         logger.error('no content delivered to get_tags')
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST)
     try:
-        return tagger.tag(text)
+        return clever.tag([text])
     except Exception as e:
         logger.exception('get_tags threw exception: ' + str(e))
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    """
