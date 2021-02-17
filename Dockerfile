@@ -60,9 +60,6 @@ RUN pip3 install pexpect
 #==========================> (fast)-API
 RUN pip3 install uvicorn
 RUN pip3 install fastapi
-#RUN pip3 install flask
-#RUN pip3 install requests
-#RUN pip3 install flask-restplus
 
 COPY main.py ./clevertagger
 #<========================== end (fast)-API

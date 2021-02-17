@@ -1,6 +1,8 @@
 #uvicorn main:app
 
+import codecs
 import logging
+import subprocess
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
@@ -13,7 +15,10 @@ logger = logging.getLogger('CleverTaggerLogger')
 
 @app.post("/smor")
 def get_smor():
-    pass
+    subprocess.run("echo 'Vermittlungsgespräche'  | fst-infl2 ../../data/zmorge/zmorge-20150315-smor_newlemma.ca > /clevertagger/clevertagger/test.txt", shell=True)
+    with codecs.open('test.txt', 'rb', 'utf8') as f:
+        lines = f.readlines()
+        print(lines)
 
 @app.post("/clever")
 def get_tags(text: str):
