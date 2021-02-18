@@ -83,13 +83,15 @@ RUN apt-get -y update \
     && cd .. \
     # \
     # remove build dependencies \
-    && apt-get purge -y git curl unzip make build-essential \
+    && apt-get purge -y git unzip make build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /clevertagger/clevertagger
 
 COPY config.py .
 COPY main.py .
+
+HEALTHCHECK CMD curl --silent --fail -X GET 'http://localhost:80/docs' || exit 1
 
 EXPOSE 80
 
