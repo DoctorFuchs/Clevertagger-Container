@@ -1,8 +1,8 @@
-#uvicorn main:app
+# uvicorn main:app
 
 import codecs
 import logging
-import subprocess
+from subprocess import Popen, PIPE
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
@@ -11,29 +11,33 @@ import clevertagger
 clever = clevertagger.Clevertagger()
 
 app = FastAPI()
-logger = logging.getLogger('CleverTaggerLogger')
+logger = logging.getLogger("CleverTaggerLogger")
+
+MODEL_PATH = "/data/zmorge/zmorge-20150315-smor_newlemma.ca"
+
 
 @app.post("/smor")
 def get_smor(text: str):
     if not text or text.isspace():
-        logger.error('no content delivered to get_tags')
+        logger.error("no content delivered to get_tags")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST)
     try:
-        subprocess.run("echo '" + text + "' | fst-infl2 ../../data/zmorge/zmorge-20150315-smor_newlemma.ca > /clevertagger/clevertagger/test.txt", shell=True)
-        with codecs.open('test.txt', 'rb', 'utf8') as f:
-            return f.readlines()
+        process = Popen(["fst-infl2", MODEL_PATH], stdin=PIPE, stdout=PIPE)
+        stdout = process.communicate(input=text.encode("utf-8"))[0]
+
+        return stdout.split()
     except Exception as e:
-        logger.exception('get_smor threw exception: ' + str(e))
+        logger.exception("get_smor threw exception: " + str(e))
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
 
 @app.post("/clever")
 def get_tags(text: str):
     if not text or text.isspace():
-        logger.error('no content delivered to get_tags')
+        logger.error("no content delivered to get_tags")
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST)
     try:
-        return clever.tag([text])
+        return [word.split("\t") for word in clever.tag([text])[0].split("\n")]
     except Exception as e:
-        logger.exception('get_tags threw exception: ' + str(e))
+        logger.exception("get_tags threw exception: " + str(e))
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
