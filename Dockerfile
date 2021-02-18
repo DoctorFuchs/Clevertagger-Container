@@ -12,11 +12,11 @@ RUN apt-get -y install curl
 RUN apt-get -y install python3
 RUN apt-get -y install python3-pip
 RUN apt-get -y install unzip
-RUN apt-get -y install make 
+RUN apt-get -y install make
 #<========================== end main requirements
 
 
-#==========================> SMORLemma 
+#==========================> SMORLemma
 RUN apt-get -y install build-essential
 RUN apt-get -y install xsltproc
 RUN apt-get -y install sfst
@@ -32,7 +32,7 @@ RUN curl https://pub.cl.uzh.ch/users/sennrich/zmorge/models/hdt_ab.zmorge-201405
 RUN unzip zmorge.model.zip -d /data/zmorge/
 
 RUN make ./SMORLemma
-#<========================== end SMORLemma 
+#<========================== end SMORLemma
 
 
 #==========================> Clevertagger
@@ -50,7 +50,7 @@ RUN git clone https://github.com/Jekub/Wapiti.git
 RUN mv ./Wapiti ./wapiti
 
 WORKDIR /clevertagger/wapiti
-RUN make 
+RUN make
 RUN make install
 
 WORKDIR /clevertagger
