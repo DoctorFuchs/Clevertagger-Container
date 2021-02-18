@@ -1,71 +1,106 @@
 FROM ubuntu:latest
-WORKDIR /clevertagger
 
-RUN apt-get -y update
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Berlin
 
-RUN apt-get -y install tzdata
-RUN ln -sf /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+ARG SMORLEMMA_COMMIT=f627f413d3aae97d5a98bc2d0b9f24631f6fb464
+ARG SMORLEMMA_TGZ_SHA256=82582b9b3390f870b6fe15eb760885eb831d53a478c820b962afe732a45c9f9f
 
-#==========================> main requirements
-RUN apt-get -y install git
-RUN apt-get -y install curl
-RUN apt-get -y install python3
-RUN apt-get -y install python3-pip
-RUN apt-get -y install unzip
-RUN apt-get -y install make
-#<========================== end main requirements
+ARG ZMORGE_NEWLEMMA_FILE=zmorge-20150315-smor_newlemma.ca.zip
+ARG ZMORGE_NEWLEMMA_SHA256=8135bbee51a91f11d8177e772d25812336980eb3e5e031ff5927a1760fc1d211
 
+ARG ZMORGE_MODEL_FILE=hdt_ab.zmorge-20140521-smor_newlemma.model.zip
+ARG ZMORGE_MODEL_SHA256=db4ac7ba3f4ab1f38db08e239e3c5f3ec6ed21c6161e02797744416bd7acd6db
 
-#==========================> SMORLemma
-RUN apt-get -y install build-essential
-RUN apt-get -y install xsltproc
-RUN apt-get -y install sfst
+ARG SFST_FILE=SFST-1.4.7f.zip
+ARG SFST_SHA256=31f331a1cc94eb610bcefc42b18a7cf62c55f894ac01a027ddff29e2a71cc31b
 
-RUN git clone -b lemmatiser https://github.com/rsennrich/SMORLemma.git
+ARG CLEVERTAGGER_COMMIT=b45832ef1f89dcc5ad8fde9a1b19cdd847720ecc
+ARG CLEVERTAGGER_TGZ_SHA=d4c651c8b7f3ea8e9fb6ac23dc225956d7faed62d1861d86df13f50adc15c9e3
 
-RUN curl https://pub.cl.uzh.ch/users/sennrich/zmorge/transducers/zmorge-20150315-smor_newlemma.ca.zip --output zmorge-20150315-smor_newlemma.ca.zip
-RUN mkdir /data
-RUN mkdir /zmorge
-RUN unzip zmorge-20150315-smor_newlemma.ca.zip -d /data/zmorge/
-
-RUN curl https://pub.cl.uzh.ch/users/sennrich/zmorge/models/hdt_ab.zmorge-20140521-smor_newlemma.model.zip --output zmorge.model.zip
-RUN unzip zmorge.model.zip -d /data/zmorge/
-
-RUN make ./SMORLemma
-#<========================== end SMORLemma
-
-
-#==========================> Clevertagger
-RUN curl https://www.cis.uni-muenchen.de/~schmid/tools/SFST/data/SFST-1.4.7f.zip --output SFST.zip
-RUN unzip SFST.zip -d /clevertagger/
-
-RUN git clone https://github.com/rsennrich/clevertagger.git
-
-RUN rm /clevertagger/clevertagger/config.py
-COPY config.py /clevertagger/clevertagger/
-
-RUN curl https://wapiti.limsi.fr/model-pos.de.gz --output wapitiModel.gz
-
-RUN git clone https://github.com/Jekub/Wapiti.git
-RUN mv ./Wapiti ./wapiti
-
-WORKDIR /clevertagger/wapiti
-RUN make
-RUN make install
+ARG WAPITI_COMMIT=v1.5.0
+ARG WAPITI_TGZ_SHA=671dee4c2b9bd790a6414f576bd94926add651490e5dad8eb4929d1b737be193
 
 WORKDIR /clevertagger
-RUN pip3 install pexpect
-#<========================== end Clevertagger
 
-#==========================> (fast)-API
-RUN pip3 install uvicorn
-RUN pip3 install fastapi
+COPY requirements.txt .
 
-COPY main.py ./clevertagger
-#<========================== end (fast)-API
+RUN apt-get -y update \
+    && apt-get -y install tzdata \
+    && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && echo ${TZ} > /etc/timezone \
+    && apt-get install -y \
+        # main requirements \
+        git \
+        curl \
+        python3 \
+        python3-pip \
+        unzip \
+        make \
+        # SMORLemma \
+        build-essential \
+        xsltproc \
+        sfst \
+    # fastapi dependencies \
+    && pip3 install -r requirements.txt \
+    # \
+    # SMORLemma \
+    && curl \
+        --location "https://github.com/rsennrich/SMORLemma/archive/${SMORLEMMA_COMMIT}.tar.gz" \
+        --output SMORLemma.tar.gz \
+    && echo "${SMORLEMMA_TGZ_SHA256}  SMORLemma.tar.gz" | sha256sum -c \
+    && mkdir SMORLemma \
+    && tar --strip-components=1 -C SMORLemma -xzf SMORLemma.tar.gz \
+    && unlink SMORLemma.tar.gz \
+    && mkdir --parent /data/zmorge \
+    && curl \
+        --location "https://pub.cl.uzh.ch/users/sennrich/zmorge/transducers/${ZMORGE_NEWLEMMA_FILE}" \
+        --output ${ZMORGE_NEWLEMMA_FILE} \
+    && echo "${ZMORGE_NEWLEMMA_SHA256}  ${ZMORGE_NEWLEMMA_FILE}" | sha256sum -c \
+    && unzip "${ZMORGE_NEWLEMMA_FILE}" -d /data/zmorge/ \
+    && unlink "${ZMORGE_NEWLEMMA_FILE}" \
+    && curl \
+        --location "https://pub.cl.uzh.ch/users/sennrich/zmorge/models/${ZMORGE_MODEL_FILE}" \
+        --output "${ZMORGE_MODEL_FILE}" \
+    && echo "${ZMORGE_MODEL_SHA256}  ${ZMORGE_MODEL_FILE}" | sha256sum -c \
+    && unzip "${ZMORGE_MODEL_FILE}" -d /data/zmorge/ \
+    && unlink "${ZMORGE_MODEL_FILE}" \
+    # \
+    # Clevertagger \
+    && curl \
+        --location "https://www.cis.uni-muenchen.de/~schmid/tools/SFST/data/${SFST_FILE}" \
+        --output "${SFST_FILE}" \
+    && echo "${SFST_SHA256}  ${SFST_FILE}" | sha256sum -c \
+    && unzip "${SFST_FILE}" -d /clevertagger/ \
+    && unlink "${SFST_FILE}" \
+    && curl \
+        --location "https://github.com/rsennrich/clevertagger/archive/${CLEVERTAGGER_COMMIT}.tar.gz" \
+        --output clevertagger.tar.gz \
+    && echo "${CLEVERTAGGER_TGZ_SHA}  clevertagger.tar.gz" | sha256sum -c \
+    && mkdir clevertagger \
+    && tar --strip-components=1 -C clevertagger -xzf clevertagger.tar.gz \
+    && unlink clevertagger.tar.gz \
+    && unlink clevertagger/config.py \
+    && curl \
+        --location "https://github.com/Jekub/Wapiti/archive/${WAPITI_COMMIT}.tar.gz" \
+        --output wapiti.tar.gz \
+    && echo "${WAPITI_TGZ_SHA}  wapiti.tar.gz" | sha256sum -c \
+    && mkdir wapiti \
+    && tar --strip-components=1 -C wapiti -xzf wapiti.tar.gz \
+    && unlink wapiti.tar.gz \
+    && cd wapiti \
+    && make \
+    && make install \
+    && cd .. \
+    # \
+    # remove build dependencies \
+    && apt-get purge -y git curl unzip make build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /clevertagger/clevertagger
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+COPY config.py .
+COPY main.py .
 
 EXPOSE 80
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
