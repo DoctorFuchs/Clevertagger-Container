@@ -29,9 +29,3 @@ In your browser, navigate to [http://localhost:8888/docs](http://localhost:8888/
 ## Linguistic Todos
 
 Clevertagger expects an array of tokenised sentences as input. Provide proper tokenisation.
-
-## Dev Todos
-
-1. Improve docker files.
-2. Try to do without sending SMOR output to file.
-3. Add proper input and output models.
