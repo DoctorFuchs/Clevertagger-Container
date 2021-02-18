@@ -3,9 +3,6 @@ FROM ubuntu:latest
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
-ARG SMORLEMMA_COMMIT=f627f413d3aae97d5a98bc2d0b9f24631f6fb464
-ARG SMORLEMMA_TGZ_SHA256=82582b9b3390f870b6fe15eb760885eb831d53a478c820b962afe732a45c9f9f
-
 ARG ZMORGE_NEWLEMMA_FILE=zmorge-20150315-smor_newlemma.ca.zip
 ARG ZMORGE_NEWLEMMA_SHA256=8135bbee51a91f11d8177e772d25812336980eb3e5e031ff5927a1760fc1d211
 
@@ -44,13 +41,6 @@ RUN apt-get -y update \
     && pip3 install -r requirements.txt \
     # \
     # SMORLemma \
-    && curl \
-        --location "https://github.com/rsennrich/SMORLemma/archive/${SMORLEMMA_COMMIT}.tar.gz" \
-        --output SMORLemma.tar.gz \
-    && echo "${SMORLEMMA_TGZ_SHA256}  SMORLemma.tar.gz" | sha256sum -c \
-    && mkdir SMORLemma \
-    && tar --strip-components=1 -C SMORLemma -xzf SMORLemma.tar.gz \
-    && unlink SMORLemma.tar.gz \
     && mkdir --parent /data/zmorge \
     && curl \
         --location "https://pub.cl.uzh.ch/users/sennrich/zmorge/transducers/${ZMORGE_NEWLEMMA_FILE}" \
