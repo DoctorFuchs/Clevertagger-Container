@@ -8,14 +8,14 @@ from pydantic import BaseModel, Field
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
+from config import SMOR_MODEL
+
 import clevertagger
 
 clever = clevertagger.Clevertagger()
 
 app = FastAPI()
 logger = logging.getLogger("CleverTaggerLogger")
-
-MODEL_PATH = "/data/zmorge/zmorge-20150315-smor_newlemma.ca"
 
 
 class SmorResponse(BaseModel):
@@ -64,7 +64,7 @@ def get_smor(req: SmorRequest):
         return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST)
 
     try:
-        process = Popen(["fst-infl2", MODEL_PATH], stdin=PIPE, stdout=PIPE)
+        process = Popen(["fst-infl2", SMOR_MODEL], stdin=PIPE, stdout=PIPE)
         stdout = process.communicate(input=text.encode("utf-8"))[0]
 
         return {"query": text, "results": stdout.split()}
