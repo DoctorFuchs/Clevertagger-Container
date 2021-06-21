@@ -40,7 +40,7 @@ RUN apt-get -y update \
     # fastapi dependencies \
     && pip3 install -r requirements.txt \
     # \
-    # SMORLemma \
+    # ZMORGE \
     && mkdir --parent /data/zmorge \
     && curl \
         --location "https://pub.cl.uzh.ch/users/sennrich/zmorge/transducers/${ZMORGE_NEWLEMMA_FILE}" \
